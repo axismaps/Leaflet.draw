@@ -1,3 +1,4 @@
+L.EditToolbar = L.EditToolbar || {};
 L.EditToolbar.Edit = L.Handler.extend({
 	statics: {
 		TYPE: 'edit'
@@ -28,11 +29,15 @@ L.EditToolbar.Edit = L.Handler.extend({
 		if (this._enabled || !this._hasAvailableLayers()) {
 			return;
 		}
-		this.fire('enabled', {handler: this.type});
-			//this disable other handlers
+		this.fire('enabled', {
+			handler: this.type
+		});
+		//this disable other handlers
 
-		this._map.fire('draw:editstart', { handler: this.type });
-			//allow drawLayer to be updated before beginning edition.
+		this._map.fire('draw:editstart', {
+			handler: this.type
+		});
+		//allow drawLayer to be updated before beginning edition.
 
 		L.Handler.prototype.enable.call(this);
 		this._featureGroup
@@ -41,13 +46,19 @@ L.EditToolbar.Edit = L.Handler.extend({
 	},
 
 	disable: function () {
-		if (!this._enabled) { return; }
+		if (!this._enabled) {
+			return;
+		}
 		this._featureGroup
 			.off('layeradd', this._enableLayerEdit, this)
 			.off('layerremove', this._disableLayerEdit, this);
 		L.Handler.prototype.disable.call(this);
-		this._map.fire('draw:editstop', { handler: this.type });
-		this.fire('disabled', {handler: this.type});
+		this._map.fire('draw:editstop', {
+			handler: this.type
+		});
+		this.fire('disabled', {
+			handler: this.type
+		});
 	},
 
 	addHooks: function () {
@@ -58,13 +69,6 @@ L.EditToolbar.Edit = L.Handler.extend({
 
 			this._featureGroup.eachLayer(this._enableLayerEdit, this);
 
-			this._tooltip = new L.Tooltip(this._map);
-			this._tooltip.updateContent({
-				text: L.drawLocal.edit.handlers.edit.tooltip.text,
-				subtext: L.drawLocal.edit.handlers.edit.tooltip.subtext
-			});
-
-			this._map.on('mousemove', this._onMouseMove, this);
 		}
 	},
 
@@ -76,10 +80,6 @@ L.EditToolbar.Edit = L.Handler.extend({
 			// Clear the backups of the original layers
 			this._uneditedLayerProps = {};
 
-			this._tooltip.dispose();
-			this._tooltip = null;
-
-			this._map.off('mousemove', this._onMouseMove, this);
 		}
 	},
 
@@ -90,6 +90,7 @@ L.EditToolbar.Edit = L.Handler.extend({
 	},
 
 	save: function () {
+		console.log('saving', layer.edited);
 		var editedLayers = new L.LayerGroup();
 		this._featureGroup.eachLayer(function (layer) {
 			if (layer.edited) {
@@ -97,7 +98,9 @@ L.EditToolbar.Edit = L.Handler.extend({
 				layer.edited = false;
 			}
 		});
-		this._map.fire('draw:edited', {layers: editedLayers});
+		this._map.fire('draw:edited', {
+			layers: editedLayers
+		});
 	},
 
 	_backupLayer: function (layer) {
@@ -114,7 +117,7 @@ L.EditToolbar.Edit = L.Handler.extend({
 					latlng: L.LatLngUtil.cloneLatLng(layer.getLatLng()),
 					radius: layer.getRadius()
 				};
-			} else if (layer instanceof L.Marker) { // Marker
+			} else { // Marker
 				this._uneditedLayerProps[id] = {
 					latlng: L.LatLngUtil.cloneLatLng(layer.getLatLng())
 				};
@@ -132,7 +135,7 @@ L.EditToolbar.Edit = L.Handler.extend({
 			} else if (layer instanceof L.Circle) {
 				layer.setLatLng(this._uneditedLayerProps[id].latlng);
 				layer.setRadius(this._uneditedLayerProps[id].radius);
-			} else if (layer instanceof L.Marker) { // Marker
+			} else { // Marker
 				layer.setLatLng(this._uneditedLayerProps[id].latlng);
 			}
 		}
@@ -188,16 +191,12 @@ L.EditToolbar.Edit = L.Handler.extend({
 		if (this._selectedPathOptions) {
 			pathOptions = L.Util.extend({}, this._selectedPathOptions);
 
-			// Use the existing color of the layer
-			if (pathOptions.maintainColor) {
-				pathOptions.color = layer.options.color;
-				pathOptions.fillColor = layer.options.fillColor;
-			}
-
 			if (isMarker) {
 				this._toggleMarkerHighlight(layer);
 			} else {
-				layer.options.previousOptions = L.Util.extend({ dashArray: null }, layer.options);
+				layer.options.previousOptions = L.Util.extend({
+					dashArray: null
+				}, layer.options);
 
 				// Make sure that Polylines are not filled
 				if (!(layer instanceof L.Circle) && !(layer instanceof L.Polygon) && !(layer instanceof L.Rectangle)) {
@@ -212,6 +211,7 @@ L.EditToolbar.Edit = L.Handler.extend({
 			layer.dragging.enable();
 			layer.on('dragend', this._onMarkerDragEnd);
 		} else {
+			console.dir(layer);
 			layer.editing.enable();
 		}
 	},
@@ -245,9 +245,6 @@ L.EditToolbar.Edit = L.Handler.extend({
 		layer.edited = true;
 	},
 
-	_onMouseMove: function (e) {
-		this._tooltip.updatePosition(e.latlng);
-	},
 
 	_hasAvailableLayers: function () {
 		return this._featureGroup.getLayers().length !== 0;
