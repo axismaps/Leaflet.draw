@@ -79,70 +79,6 @@ L.DrawTouch = L.Class.extend({
 		L.DomEvent.removeListener(this._map._container, 'touchend', this._onTouchEnd, this);
 	}
 });
-L.Draw.Circle = L.Draw.SimpleShape.extend({
-	statics: {
-		TYPE: 'circle'
-	},
-
-	options: {
-		shapeOptions: {
-			stroke: true,
-			color: '#f06eaa',
-			weight: 4,
-			opacity: 0.5,
-			fill: true,
-			fillColor: null, //same as color by default
-			fillOpacity: 0.2,
-			clickable: true
-		},
-		showRadius: true,
-		metric: true // Whether to use the metric meaurement system or imperial
-	},
-
-	initialize: function (map, options) {
-		// Save the type so super can fire, need to do this as cannot do this.TYPE :(
-		this.type = L.Draw.Circle.TYPE;
-
-		this._initialLabelText = L.drawLocal.draw.handlers.circle.tooltip.start;
-
-		L.Draw.SimpleShape.prototype.initialize.call(this, map, options);
-	},
-
-	_drawShape: function (latlng) {
-		if (!this._shape) {
-			this._shape = new L.Circle(this._startLatLng, this._startLatLng.distanceTo(latlng), this.options.shapeOptions);
-			this._map.addLayer(this._shape);
-		} else {
-			this._shape.setRadius(this._startLatLng.distanceTo(latlng));
-		}
-	},
-
-	_fireCreatedEvent: function () {
-		var circle = new L.Circle(this._startLatLng, this._shape.getRadius(), this.options.shapeOptions);
-		L.Draw.SimpleShape.prototype._fireCreatedEvent.call(this, circle);
-	},
-
-	_onMouseMove: function (e) {
-		var latlng = e.latlng,
-			showRadius = this.options.showRadius,
-			useMetric = this.options.metric,
-			radius;
-
-		this._tooltip.updatePosition(latlng);
-		if (this._isDrawing) {
-			this._drawShape(latlng);
-
-			// Get the new radius (rounded to 1 dp)
-			radius = this._shape.getRadius().toFixed(1);
-
-			this._tooltip.updateContent({
-				text: this._endLabelText,
-				subtext: showRadius ? 'Radius: ' + L.GeometryUtil.readableDistance(radius, useMetric) : ''
-			});
-		}
-	}
-});
-
 L.Draw = {};
 
 L.Draw.Feature = L.Handler.extend({
@@ -983,5 +919,138 @@ L.Draw.PolygonTouch = L.Draw.Polygon.extend({
 		// No matter what remove the start and end point ready for the next touch.
 		this._touchOriginPoint = null;
 		this._touchEndPoint = null;
+	}
+});
+L.SimpleShape = {};
+
+L.Draw.SimpleShape = L.Draw.Feature.extend({
+	options: {
+		repeatMode: false
+	},
+
+	initialize: function (map, options) {
+		L.Draw.Feature.prototype.initialize.call(this, map, options);
+	},
+
+	addHooks: function () {
+		L.Draw.Feature.prototype.addHooks.call(this);
+		if (this._map) {
+			this._mapDraggable = this._map.dragging.enabled();
+
+			if (this._mapDraggable) {
+				this._map.dragging.disable();
+			}
+
+			//TODO refactor: move cursor to styles
+			this._container.style.cursor = 'crosshair';
+
+			this._map
+				.on('mousedown', this._onMouseDown, this)
+				.on('mousemove', this._onMouseMove, this);
+		}
+	},
+
+	removeHooks: function () {
+		L.Draw.Feature.prototype.removeHooks.call(this);
+		if (this._map) {
+			if (this._mapDraggable) {
+				this._map.dragging.enable();
+			}
+
+			//TODO refactor: move cursor to styles
+			this._container.style.cursor = '';
+
+			this._map
+				.off('mousedown', this._onMouseDown, this)
+				.off('mousemove', this._onMouseMove, this);
+
+			L.DomEvent.off(document, 'mouseup', this._onMouseUp, this);
+
+			// If the box element doesn't exist they must not have moved the mouse, so don't need to destroy/return
+			if (this._shape) {
+				this._map.removeLayer(this._shape);
+				delete this._shape;
+			}
+		}
+		this._isDrawing = false;
+	},
+
+	_getTooltipText: function () {
+		return {
+			text: this._endLabelText
+		};
+	},
+
+	_onMouseDown: function (e) {
+		this._isDrawing = true;
+		this._startLatLng = e.latlng;
+
+		L.DomEvent
+			.on(document, 'mouseup', this._onMouseUp, this)
+			.preventDefault(e.originalEvent);
+	},
+
+	_onMouseUp: function () {
+		if (this._shape) {
+			this._fireCreatedEvent();
+		}
+
+		this.disable();
+		if (this.options.repeatMode) {
+			this.enable();
+		}
+	}
+});
+L.Draw.Circle = L.Draw.SimpleShape.extend({
+	statics: {
+		TYPE: 'circle'
+	},
+
+	options: {
+		shapeOptions: {
+			stroke: true,
+			color: '#f06eaa',
+			weight: 4,
+			opacity: 0.5,
+			fill: true,
+			fillColor: null, //same as color by default
+			fillOpacity: 0.2,
+			clickable: true
+		},
+		showRadius: true,
+		metric: true // Whether to use the metric meaurement system or imperial
+	},
+
+	initialize: function (map, options) {
+		// Save the type so super can fire, need to do this as cannot do this.TYPE :(
+		this.type = L.Draw.Circle.TYPE;
+
+		L.Draw.SimpleShape.prototype.initialize.call(this, map, options);
+	},
+
+	_drawShape: function (latlng) {
+		if (!this._shape) {
+			this._shape = new L.Circle(this._startLatLng, this._startLatLng.distanceTo(latlng), this.options.shapeOptions);
+			this._map.addLayer(this._shape);
+		} else {
+			this._shape.setRadius(this._startLatLng.distanceTo(latlng));
+		}
+	},
+
+	_fireCreatedEvent: function () {
+		var circle = new L.Circle(this._startLatLng, this._shape.getRadius(), this.options.shapeOptions);
+		L.Draw.SimpleShape.prototype._fireCreatedEvent.call(this, circle);
+	},
+
+	_onMouseMove: function (e) {
+		var latlng = e.latlng,
+			radius;
+
+		if (this._isDrawing) {
+			this._drawShape(latlng);
+
+			// Get the new radius (rounded to 1 dp)
+			radius = this._shape.getRadius().toFixed(1);
+		}
 	}
 });

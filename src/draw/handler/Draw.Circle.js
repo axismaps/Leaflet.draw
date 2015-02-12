@@ -22,8 +22,6 @@ L.Draw.Circle = L.Draw.SimpleShape.extend({
 		// Save the type so super can fire, need to do this as cannot do this.TYPE :(
 		this.type = L.Draw.Circle.TYPE;
 
-		this._initialLabelText = L.drawLocal.draw.handlers.circle.tooltip.start;
-
 		L.Draw.SimpleShape.prototype.initialize.call(this, map, options);
 	},
 
@@ -43,21 +41,13 @@ L.Draw.Circle = L.Draw.SimpleShape.extend({
 
 	_onMouseMove: function (e) {
 		var latlng = e.latlng,
-			showRadius = this.options.showRadius,
-			useMetric = this.options.metric,
 			radius;
 
-		this._tooltip.updatePosition(latlng);
 		if (this._isDrawing) {
 			this._drawShape(latlng);
 
 			// Get the new radius (rounded to 1 dp)
 			radius = this._shape.getRadius().toFixed(1);
-
-			this._tooltip.updateContent({
-				text: this._endLabelText,
-				subtext: showRadius ? 'Radius: ' + L.GeometryUtil.readableDistance(radius, useMetric) : ''
-			});
 		}
 	}
 });
