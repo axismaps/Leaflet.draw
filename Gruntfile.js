@@ -46,15 +46,14 @@ module.exports = function (grunt) {
 				src: [
 					'<%= leafletDraw.src %>/ext/LatLngUtils.js',
 					'<%= leafletDraw.src %>/dom/Draw.Touch.js',
+					'<%= leafletDraw.src %>/draw/handler/Draw.Circle.js',
 					'<%= leafletDraw.src %>/draw/handler/Draw.Feature.js',
 					'<%= leafletDraw.src %>/draw/handler/Draw.Marker.js',
 					'<%= leafletDraw.src %>/draw/handler/Draw.MarkerTouch.js',
 					'<%= leafletDraw.src %>/draw/handler/Draw.Polyline.js',
 					'<%= leafletDraw.src %>/draw/handler/Draw.PolylineTouch.js',
 					'<%= leafletDraw.src %>/draw/handler/Draw.Polygon.js',
-					'<%= leafletDraw.src %>/draw/handler/Draw.PolygonTouch.js',
-					'<%= leafletDraw.src %>/edit/handler/EditToolbar.Edit.js',
-					'<%= leafletDraw.src %>/edit/handler/Edit.Poly.js'
+					'<%= leafletDraw.src %>/draw/handler/Draw.PolygonTouch.js'
 				],
 				dest: '<%= leafletDraw.dist %>/leaflet.draw-src.js',
 			},
